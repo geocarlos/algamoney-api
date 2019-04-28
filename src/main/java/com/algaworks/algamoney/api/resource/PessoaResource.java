@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.algaworks.algamoney.api.event.RecursoCriadoEvent;
 import com.algaworks.algamoney.api.model.Pessoa;
 import com.algaworks.algamoney.api.repository.PessoaRepository;
+import com.algaworks.algamoney.api.repository.filter.PessoaFilter;
 import com.algaworks.algamoney.api.service.PessoaService;
 
 @RestController
@@ -41,8 +42,8 @@ public class PessoaResource {
 	
 	@GetMapping
 	@PreAuthorize("hasAuthority('ROLE_PESQUISAR_PESSOA') and #oauth2.hasScope('read')")
-	public List<Pessoa> listar(){
-		return pessoaRepository.findAll();
+	public List<Pessoa> listar(PessoaFilter pessoaFilter){
+		return pessoaRepository.filtrar(pessoaFilter);
 	}
 	
 	@GetMapping("/{codigo}")

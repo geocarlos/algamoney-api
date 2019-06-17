@@ -2,8 +2,7 @@ package com.algaworks.algamoney.api.service;
 
 import java.util.Optional;
 
-import javax.validation.Valid;
-
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,20 +16,45 @@ import com.algaworks.algamoney.api.service.exception.PessoaInexistenteOuInativaE
 public class LancamentoService {
 	
 	@Autowired
-	PessoaRepository pessoaRepository;
-	
-	@Autowired
-	LancamentoRepository lancamentoRepository;
+	private PessoaRepository pessoaRepository;
 
-	public Lancamento salvar(@Valid Lancamento lancamento) {
-		
-		Optional<Pessoa> pessoa = pessoaRepository.findById(lancamento.getPessoa().getCodigo());
-		
-		if(pessoa.get() == null || pessoa.get().isInativo()) {
+	@Autowired
+	private LancamentoRepository lancamentoRepository;
+
+	public Lancamento salvar(Lancamento lancamento) {
+		validarPessoa(lancamento);
+
+		return lancamentoRepository.save(lancamento);
+	}
+
+	public Lancamento atualizar(Long codigo, Lancamento lancamento) {
+		Lancamento lancamentoSalvo = buscarLancamentoExistente(codigo);
+		if (!lancamento.getPessoa().equals(lancamentoSalvo.getPessoa())) {
+			validarPessoa(lancamento);
+		}
+
+		BeanUtils.copyProperties(lancamento, lancamentoSalvo, "codigo");
+
+		return lancamentoRepository.save(lancamentoSalvo);
+	}
+
+	private void validarPessoa(Lancamento lancamento) {
+		Optional<Pessoa> pessoa = null;
+		if (lancamento.getPessoa().getCodigo() != null) {
+			pessoa = pessoaRepository.findById(lancamento.getPessoa().getCodigo());
+		}
+
+		if (pessoa == null || !pessoa.isPresent()) {
 			throw new PessoaInexistenteOuInativaException();
 		}
-		
-		return lancamentoRepository.save(lancamento);
+	}
+
+	private Lancamento buscarLancamentoExistente(Long codigo) {
+		Optional<Lancamento> lancamentoSalvo = lancamentoRepository.findById(codigo);
+		if (!lancamentoSalvo.isPresent()) {
+			throw new IllegalArgumentException();
+		}
+		return lancamentoSalvo.get();
 	}
 
 }
